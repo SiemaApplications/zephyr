@@ -16,8 +16,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(eeprom_m24c16);
 
-#define GET_M24C16_I2C_DEV_ADDR(dev_type_id, eeprom_addr) ((dev_type_id >> 1) \
-		+ ((eeprom_addr >> 8) & BIT_MASK(3)))
+#define GET_M24C16_I2C_DEV_ADDR(dev_type_id, eeprom_addr) (((dev_type_id) >> 1) \
+		+ (((eeprom_addr) >> 8) & BIT_MASK(3)))
 
 struct eeprom_m24c16_config {
 	const char *bus_dev_name;
@@ -67,8 +67,8 @@ static int eeprom_m24c16_read_max_bytes(const struct device *dev, off_t offset, 
 	len = eeprom_m24c16_adjust_read_count(dev, offset, len);
 
 	/*
-	 * A write cycle may be in progress so reads must be attempted
-	 * until the current write cycle should be completed.
+	 * A write cycle may be in progress so we try to read until success or
+	 * timeout specified by datasheet for write cycle time length.
 	 */
 	timeout = k_uptime_get() + config->timeout;
 	while (1) {
@@ -189,9 +189,8 @@ static int eeprom_m24c16_write_page(const struct device *dev, off_t offset,
 	memcpy(&block[i], buf, count);
 
 	/*
-	 * A write cycle may already be in progress so writes must be
-	 * attempted until the previous write cycle should be
-	 * completed.
+	 * A write cycle may be in progress so we try to read until success or
+	 * timeout specified by datasheet for write cycle time length.
 	 */
 	timeout = k_uptime_get() + config->timeout;
 	while (1) {
